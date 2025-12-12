@@ -1,36 +1,25 @@
 use anyhow::{Result, bail};
 use serde_json::Value;
 
-/// This function takes a JSON object (like a dictionary) and converts it into a string format
-/// that looks like a Git configuration file (INI format).
+/// Converts a JSON Object into a Git-compatible INI string.
 ///
-/// For example, if you have this JSON:
-/// {
-///     "core": {
-///         "bare": false
-///     }
-/// }
-///
-/// It will convert it to:
-/// [core]
-///   bare = false
+/// NOTE: This implementation specifically handles the 3-level hierarchy of Git config:
+/// Section -> Subsection -> Setting.
+/// - Top-level keys are Sections.
+/// - Second-level keys are Subsections. If the key is empty string "", it represents the Section itself (no subsection).
+/// - Third-level keys are the actual Settings (Key-Value pairs).
 pub fn obj_to_str(config_obj: &Value) -> Result<String> {
-    // We try to interpret the input as a helper object (dictionary).
-    // If it's not a valid object, we return an error.
     let obj = config_obj
         .as_object()
         .ok_or_else(|| anyhow::anyhow!("Invalid configObj: Must be a non-empty object."))?;
 
-    // If the object is empty, we also return an error because a config file shouldn't be empty.
     if obj.is_empty() {
         bail!("Invalid configObj: Must be a non-empty object.");
     };
 
     let mut output = String::new();
 
-    // Loop through each main section of the config (e.g., "core", "remote").
     for (section_name, section_val) in obj {
-        // Each section must contain another object (subsections or settings).
         let subsections = section_val.as_object().ok_or_else(|| {
             anyhow::anyhow!(
                 "Invalid section '{}': Must contain subsection objects.",
@@ -38,9 +27,7 @@ pub fn obj_to_str(config_obj: &Value) -> Result<String> {
             )
         })?;
 
-        // Loop through the subsections inside the main section.
         for (subsection_name, settings_val) in subsections {
-            // The settings inside must also be an object (key-value pairs).
             let settings = settings_val.as_object().ok_or_else(|| {
                 anyhow::anyhow!(
                     "Invalid settings for [{}]: Must be an object.",
@@ -48,9 +35,8 @@ pub fn obj_to_str(config_obj: &Value) -> Result<String> {
                 )
             })?;
 
-            // Create the header for this section.
-            // If there's a subsection name (like 'origin' in [remote "origin"]), include it.
-            // Otherwise, just use the section name (like [core]).
+            // Note: Git config format uses [section "subsection"] syntax.
+            // If subsection_name is empty, it formats as [section]
             let quoted_subsection = if subsection_name.is_empty() {
                 "".to_string()
             } else {
@@ -59,12 +45,10 @@ pub fn obj_to_str(config_obj: &Value) -> Result<String> {
 
             output.push_str(&format!("[{}{}]\n", section_name, quoted_subsection));
 
-            // Write each setting as "key = value"
             for (key, val) in settings {
-                // Convert the value to a string.
-                // If it's a complicated object, we turn it into a JSON string.
-                // If it's a simple string, we just use it.
-                // Otherwise (numbers, booleans), we standard conversion.
+                // Critical: We must handle different JSON types to match Git's string expectation.
+                // - Objects/Arrays are serialized to JSON strings.
+                // - Primitives are converted directly.
                 let string_value = if val.is_object() {
                     serde_json::to_string(val)?
                 } else if val.is_string() {
@@ -131,10 +115,10 @@ mod tests {
 
     #[test]
     fn test_obj_to_str_invalid_input() {
-         // Not an object
+        // Not an object
         let config = json!([]);
         assert!(obj_to_str(&config).is_err());
-        
+
         // Empty object
         let config = json!({});
         assert!(obj_to_str(&config).is_err());

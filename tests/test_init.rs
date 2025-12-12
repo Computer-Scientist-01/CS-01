@@ -242,7 +242,7 @@ fn test_init_nested_repo_protection() {
     assert!(!output.status.success());
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains("Refusing to create nested repository"));
-    
+
     // Ensure no .CS01 created in inner
     assert!(!inner_dir.join(".CS01").exists());
 }
