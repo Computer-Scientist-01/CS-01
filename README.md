@@ -1,43 +1,65 @@
 # CS01
+    
+CS01 is a lightweight, educational version control system (VCS) originally implemented in TypeScript and now rewritten in **Rust**, inspired by Git. It mimics core Git behaviors like repository initialization, file staging, committing, and branching, but with a focus on simplicity, type safety, and modularity. 
 
-CS01 is a lightweight, educational version control system (VCS) implemented in TypeScript, inspired by Git. It mimics core Git behaviors like repository initialization, file staging, committing, and branching, but with a focus on simplicity, type safety, and modularity. Built as a learning project, CS01 uses Node.js/Bun for runtime and Jest for testing—ideal for understanding VCS internals without the complexity of full Git.
+This project serves as a learning resource for understanding VCS internals. The original TypeScript codebase is preserved in the `reference_ts/` directory for educational comparison.
 
-Current status: **Prototype stage** with `init` fully implemented and tested. Upcoming: `add`, `commit` and more.
+## Status
 
-## Features
-
-- **Git-Like Structure**: Uses `.CS01` dirs (non-bare), `objects/`, `refs/`, INI configs, and ref files.
-- **Secure & Robust**: Sync FS with error handling, secure perms (`0o755`), and validation.
+**Current Phase**: Functionality Migration
+- [x] Repository Initialization (`init`) - Fully implemented and compatible with TS version.
+- [ ] File Staging (`add`) - Upcoming.
+- [ ] Committing (`commit`) - Upcoming.
 
 ## Installation
 
-1. **Clone the Repo**:
-   ```bash
-   git clone https://github.com/your-username/CS-01.git
-   cd CS-01
-   ```
+### Prerequisites
+- **Rust**: Ensure you have a recent version of Rust installed (via `rustup`).
 
-2. **Install Dependencies**:
-   - **With npm**: `npm install`
-   - **With Bun** (recommended for speed): `bun install`
+### Building from Source
+```bash
+git clone https://github.com/Computer-Scientist-01/CS-01
+cd CS-01
+cargo build --release
+```
 
-3. **Build & Test**:
-   ```bash
-   # Type-check
-   npx tsc --noEmit
-   
-   # Run tests
-   bun test  # Or npm test (Jest)
-   ```
+## Usage
+
+### Initialize a Repository
+Initialize a new CS01 repository in the current directory:
+```bash
+cargo run -- init
+```
+This creates a template `.CS01` directory with the default configuration.
+
+To initialize a bare repository:
+```bash
+cargo run -- init --bare
+```
+
+To specify a custom initial branch name:
+```bash
+cargo run -- init --initial-branch=master
+```
+
+## Development
+
+### Running Tests
+Run the improved integration test suite:
+```bash
+# Note: Single-threaded execution is required for tests that modify CWD
+cargo test -- --test-threads=1
+```
+
+### TypeScript Reference
+To explore or run the original TypeScript implementation:
+```bash
+cd reference_ts
+bun install
+bun test
+```
 
 ## Contributing
-
-1. **Setup**: Clone, install, test.
-2. **Add Features**: 
-   - New command? Add to `command/version-control/`; export from `src/index.ts`.
-   - Tests: `test/*.test.ts`; use temp isolation.
-3. **PR Guidelines**: Branch from `main`, lint with ESLint, 100% test pass.
-4. **Issues**: Report bugs (e.g., Windows paths) or requests (e.g., async FS).
-
-
-*Updated: November 12, 2025*  
+1. Check the `reference_ts` folder to understand the expected behavior.
+2. Implement the equivalent logic in Rust.
+3. Write matching integration tests.

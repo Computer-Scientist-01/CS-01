@@ -34,3 +34,13 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .DS_Store
 
 /command/package-manager
+# Rust
+/target
+Cargo.lock
+
+
+# Added by cargo
+#
+# already existing elements were commented out
+
+#/target
