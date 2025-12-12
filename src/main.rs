@@ -1,12 +1,10 @@
-
 use clap::{Parser, Subcommand};
-use anyhow::Result;
-
+use colored::*;
 use cs_01::commands;
 
 #[derive(Parser)]
 #[command(name = "CS01")]
-#[command(about = "CS01 Version Control System", long_about = None)]
+#[command(about = "\n\nCS01 Version Control System", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -26,14 +24,18 @@ enum Commands {
     },
 }
 
-fn main() -> Result<()> {
+fn main() {
     let cli = Cli::parse();
 
-    match &cli.command {
-        Commands::Init { bare, initial_branch } => {
-            commands::init::init(*bare, initial_branch)?;
-        }
-    }
+    let result = match &cli.command {
+        Commands::Init {
+            bare,
+            initial_branch,
+        } => commands::init::init(*bare, initial_branch),
+    };
 
-    Ok(())
+    if let Err(e) = result {
+        eprintln!("{}", format!("Error: {}", e).bright_red());
+        std::process::exit(1);
+    }
 }

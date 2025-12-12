@@ -1,9 +1,7 @@
-
+use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use anyhow::{Result, Context, anyhow};
-
 pub enum TreeNode {
     File(String),
     Directory(HashMap<String, TreeNode>),
@@ -17,11 +15,14 @@ pub fn in_repo(cwd: Option<&Path>) -> bool {
 /// Computes the full path relative to the CS01 root.
 /// Scans upward for `config` (with [core]) or `.CS01` directory.
 pub fn cs01_path(relative_path: Option<&str>, start_dir: Option<&Path>) -> Option<PathBuf> {
-    let start_dir = start_dir.map(|p| p.to_path_buf()).unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
-    let relative_path = relative_path.unwrap_or("");
+    // TODO:- thats little bit tough part for me so i need to do practice
+    let start_dir = start_dir
+        .map(|p: &Path| p.to_path_buf())
+        .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
 
+    let relative_path = relative_path.unwrap_or("");
     let mut current_dir = start_dir.clone();
-    
+
     // Loop until we hit root
     loop {
         let potential_config = current_dir.join("config");
@@ -29,12 +30,12 @@ pub fn cs01_path(relative_path: Option<&str>, start_dir: Option<&Path>) -> Optio
 
         // Check for config file
         if potential_config.exists() && potential_config.is_file() {
-             if let Ok(content) = fs::read_to_string(&potential_config) {
-                 if content.trim().starts_with("[core]") {
-                     // Found it
-                     return Some(current_dir.join(relative_path));
-                 }
-             }
+            if let Ok(content) = fs::read_to_string(&potential_config) {
+                if content.trim().starts_with("[core]") {
+                    // Found it
+                    return Some(current_dir.join(relative_path));
+                }
+            }
         }
 
         // Check for .CS01 dir
@@ -46,7 +47,7 @@ pub fn cs01_path(relative_path: Option<&str>, start_dir: Option<&Path>) -> Optio
             break;
         }
     }
-    
+
     None
 }
 
@@ -71,20 +72,25 @@ pub fn write_files_from_tree(tree: &TreeNode, prefix: &Path, options: &WriteOpti
     if options.dry_run {
         println!("[DRY-RUN] Processing at {:?}", prefix);
     }
-    
+
     match tree {
         TreeNode::File(content) => {
             if !options.overwrite && prefix.exists() {
-                 // Skip
-                 return Ok(());
+                // Skip
+                return Ok(());
             }
             if options.dry_run {
-                println!("[DRY-RUN] Write file {:?} ({} bytes)", prefix, content.len());
+                println!(
+                    "[DRY-RUN] Write file {:?} ({} bytes)",
+                    prefix,
+                    content.len()
+                );
             } else {
                 if let Some(parent) = prefix.parent() {
                     fs::create_dir_all(parent)?;
                 }
-                fs::write(prefix, content).with_context(|| format!("Failed to write {:?}", prefix))?;
+                fs::write(prefix, content)
+                    .with_context(|| format!("Failed to write {:?}", prefix))?;
             }
         }
         TreeNode::Directory(children) => {
@@ -92,15 +98,16 @@ pub fn write_files_from_tree(tree: &TreeNode, prefix: &Path, options: &WriteOpti
                 if options.dry_run {
                     println!("[DRY-RUN] Create dir {:?}", prefix);
                 } else {
-                    fs::create_dir_all(prefix).with_context(|| format!("Failed to create dir {:?}", prefix))?;
+                    fs::create_dir_all(prefix)
+                        .with_context(|| format!("Failed to create dir {:?}", prefix))?;
                 }
             }
-            
+
             for (name, node) in children {
                 write_files_from_tree(node, &prefix.join(name), options)?;
             }
         }
     }
-    
+
     Ok(())
 }
